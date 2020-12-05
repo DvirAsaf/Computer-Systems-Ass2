@@ -8,20 +8,7 @@
 //#define UNIX "-unix"
 //#define UNIX_SIGN "\n"
 //#define WIN "-win"
-//#define NULL_SIGN '\0'
 //void copyFile(const char *fileName, const char *destFile);
-//
-//int isBigE(char buffer[]) {
-//  int isBig;
-//  unsigned short int r = (unsigned short int) buffer[0];
-//  if ((r == (unsigned short int)0xfffe)) {
-//    isBig = 1;
-//  } else if ((r= (unsigned short int) buffer[1])== (unsigned short int)0xfffe){
-//    isBig = 0;
-//  }
-//  return isBig;
-//
-//}
 //
 ///***************************************************************************************************
 // Function Name:swapBytes
@@ -30,13 +17,14 @@
 // swap bytes Function output:none
 // **************************************************************************************************/
 //
-//void swapBytes(char *buff) {
+//void swapBytes(const char *buff) {
 //  char temp;       // temp varible
 //  char *bytesBuff; // pointer of type char in size of one byte
+//  int i = 0;       // index for loop
 //  // as long we didnt finish go over the array
-//  for (int i = 0; i < sizeof(buff); i++) {
+//  for (i = 0; i < sizeof(buff); i++) {
 //    // typecast of buff[i] to char pointer
-//    bytesBuff = &(buff[i]);
+//    bytesBuff = (char *)(&(buff[i]));
 //    // save the first byte in temp
 //    temp = bytesBuff[0];
 //    // update first byte
@@ -57,50 +45,42 @@
 //  if (target == NULL) {
 //    return;
 //  }
-//
-//  while (fread(buff, sizeof(buff), 1, source) != 0) {
+//  while (fread(buff, sizeof(buff), 1, source)) {
 //    if (strcmp(change, SWAP) == 0) {
-//      // if the buffer word is not mac or unix sign.
+//      // if the text is not mac or unix sign.
 //      if (strcmp(buff, MAC_SIGN) != 0 && strcmp(buff, UNIX_SIGN) != 0) {
 //        swapBytes(buff);
-//        fwrite(buff, sizeof(buff), 1, target);
 //      }
-//      continue;
 //    } else if (strcmp(change, KEEP) == 0) {
 //      continue;
 //    }
 //    if (strcmp(f1, MAC) == 0) {
 //      if (strcmp(f2, UNIX) == 0) {
-//        if (strcmp(buff, MAC_SIGN) == 0) {
+//        if (strcmp(buff, MAC_SIGN) == 0)
 //          strcpy(buff, UNIX_SIGN);
-//          fwrite(buff, sizeof(buff), 1, target);
-//        }
+//        fwrite(buff, sizeof(buff), 1, target);
 //      } else if (strcmp(f2, WIN) == 0) {
 //        if (strcmp(buff, MAC_SIGN) == 0)
 //          fwrite(buff, sizeof(buff), 1, target);
 //        strcpy(buff, UNIX_SIGN);
 //        fwrite(buff, sizeof(buff), 1, target);
 //      } else {
-//        fwrite(buff, sizeof(buff), 1, target);
+//        copyFile(src, trg);
 //      }
 //    }
 //    if (strcmp(f1, UNIX) == 0) {
 //      if (strcmp(f2, MAC) == 0) {
-//        if (strcmp(buff, UNIX_SIGN) == 0) {
+//        if (strcmp(buff, UNIX_SIGN) == 0)
 //          strcpy(buff, MAC_SIGN);
-//          fwrite(buff, sizeof(buff), 1, target);
-//        }
-//      } else if (strcmp(f2, WIN) == 0) {
-//        if (strcmp(buff, UNIX_SIGN) == 0) {
-//          strcpy(buff, MAC_SIGN);
-//          fwrite(buff, sizeof(buff), 1, target);
-////          strcpy(buff, NULL_SIGN);
-////          fwrite(buff, sizeof(buff), 1, target);
-//          strcpy(buff, UNIX_SIGN);
-//          fwrite(buff, sizeof(buff), 1, target);
-//        }
-//      } else {
 //        fwrite(buff, sizeof(buff), 1, target);
+//      } else if (strcmp(f2, WIN) == 0) {
+//        if (strcmp(buff, UNIX_SIGN) == 0)
+//          strcpy(buff, MAC_SIGN);
+//        fwrite(buff, sizeof(buff), 1, target);
+//        strcpy(buff, UNIX_SIGN);
+//        fwrite(buff, sizeof(buff), 1, target);
+//      } else {
+//        copyFile(src, trg);
 //      }
 //    }
 //    // TODO: finish the if condition
@@ -110,26 +90,19 @@
 //        if (strcmp(buff, MAC_SIGN) == 0) {
 //          strcpy(buff, MAC_SIGN);
 //          fwrite(buff, sizeof(buff), 1, target);
-////          strcpy(buff, NULL_SIGN);
-//          fwrite(buff,sizeof(buff), 1, target);
-////          strcpy(buff, UNIX_SIGN);
-////          fwrite(buff, sizeof(buff), 1, target);
+//          strcpy(buff, UNIX_SIGN);
+//          fwrite(buff, sizeof(buff), 1, target);
 //        }
 //      } else if (strcmp(f2, UNIX) == 0) {
-////        strcpy(buff, MAC_SIGN);
-////        fwrite(buff, sizeof(buff), 1, target);
+//        strcpy(buff, MAC_SIGN);
+//        fwrite(buff, sizeof(buff), 1, target);
 //        strcpy(buff, UNIX_SIGN);
 //        fwrite(buff, sizeof(buff), 1, target);
-////        strcpy(buff, NULL_SIGN);
-//        fwrite(buff,sizeof(buff), 1, target);
 //      } else {
-//        fwrite(buff, sizeof(buff), 1, target);
+//        copyFile(src, trg);
 //      }
 //    }
-//    fwrite(buff, sizeof(buff), 1, target);
 //  }
-//  fclose(source);
-//  fclose(target);
 //}
 //
 ///***************************************************************************************************
