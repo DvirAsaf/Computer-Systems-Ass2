@@ -111,17 +111,38 @@ void applyChangeSwap(char* needChange, const char* flag ,FILE* dest_file)
   }//to format of windows
   else if(strcmp(flag,"-win")== 0)
   {
-    //end line in windows consists of two characters(of two bytes each)
+
     needChange[0] = END_MAC;
     SwapCharsBytes(needChange);
-    fwrite(needChange,sizeof(help), 1,dest_file);
+    fwrite(needChange,sizeof(needChange), 1,dest_file);
+
     help[0]=NULL_TEMINATOR;
-    //in c array containing the characters terminated with a null character
-    SwapCharsBytes(needChange);
-    fwrite(help, sizeof(help),1,dest_file);
+    SwapCharsBytes(help);
+    fwrite(help, sizeof(needChange),1,dest_file);
+
+    //end line in windows consists of two characters(of two bytes each)
     needChange[0] = END_UNIX;
     SwapCharsBytes(needChange);
-    fwrite(needChange,sizeof(help), 1,dest_file);
+    fwrite(needChange,sizeof(needChange), 1,dest_file);
+
+
+
+    //in c array containing the characters terminated with a null character
+
+
+//    needChange[0] = END_UNIX;
+////    SwapCharsBytes(needChange);
+//    fwrite(needChange,sizeof(char ), 1,dest_file);
+//
+//
+//    //end line in windows consists of two characters(of two bytes each)
+//    needChange[0] = END_MAC;
+////    SwapCharsBytes(needChange);
+////    fwrite(needChange,sizeof(needChange ), 1,dest_file);
+//    needChange[1]=NULL_TEMINATOR;
+//    //in c array containing the characters terminated with a null character
+////    SwapCharsBytes(help);
+//    fwrite(needChange, sizeof(needChange),1,dest_file);
   }
 }
 
@@ -243,6 +264,8 @@ void convertAndSwap(const char *fileName, const char *destFile, const char *flag
         if(fread(buff , sizeof(buff), 1,in) > 0){//now check if there is more bytes to read
           //call checkEndLine function which takes care of the case we need convert to windows format
           if(checkEndLineAndSwap(buff,END_UNIX,flag2,dest_file)==0){
+//            SwapCharsBytes(buff);
+//          fwrite(buff, sizeof(buff), 1, dest_file);
             buffCheck[0]=END_MAC;
 //            SwapCharsBytes(buffCheck);
 //            fwrite(buffCheck,sizeof(buff), 1,dest_file);
