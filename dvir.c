@@ -14,19 +14,8 @@
 #define NULL_TEMINATOR '\0'
 #define SWAP "-swap"
 #define KEEP "-keep"
+
 void copyFile(const char *fileName, const char *destFile);
-
-int isBigE(char buffer[]) {
-  int isBig;
-  unsigned short int r = (unsigned short int) buffer[0];
-  if ((r == (unsigned short int)0xfffe)) {
-    isBig = 1;
-  } else if ((r= (unsigned short int) buffer[1])== (unsigned short int)0xfffe){
-    isBig = 0;
-  }
-  return isBig;
-
-}
 
 /***************************************************************************************************
  Function Name:swapBytes
@@ -51,6 +40,12 @@ void swapBytes(short int* buff)
     bytesBuff[1]=temp;
   }
 }
+
+void SwapCharsBytes(char* buffer){
+  char temp = buffer[0];
+  buffer[0] = buffer[1];
+  buffer[1]=temp;
+}
 //void swapBytes(char *buff) {
 //  char temp;       // temp varible
 //  char *bytesBuff; // pointer of type char in size of one byte
@@ -67,7 +62,7 @@ void swapBytes(short int* buff)
 //  }
 //}
 
-void applyChange(char* needChange, const char* flag ,FILE* helper)
+void applyChange(char* needChange, const char* flag ,FILE* dest_file)
 {
   //help buffer
   char help[2];
@@ -75,31 +70,74 @@ void applyChange(char* needChange, const char* flag ,FILE* helper)
   if(strcmp(flag,"-unix")== 0)
   {
     needChange[0] = END_UNIX;
-    fwrite(needChange,sizeof(char), 1,helper);
+    fwrite(needChange,sizeof(char), 1,dest_file);
 
   }//to format of mac
   else if(strcmp(flag,"-mac")== 0)
   {
     needChange[0] = END_MAC;
-    fwrite(needChange,sizeof(char), 1,helper);
+    fwrite(needChange,sizeof(char), 1,dest_file);
   }//to format of windows
   else if(strcmp(flag,"-win")== 0)
   {
     //end line in windows consists of two characters(of two bytes each)
     needChange[0] = END_MAC;
-    fwrite(needChange,sizeof(char), 1,helper);
+    fwrite(needChange,sizeof(char), 1,dest_file);
     help[0]=NULL_TEMINATOR;
     //in c array containing the characters terminated with a null character
-    fwrite(help, sizeof(char),1,helper);
+    fwrite(help, sizeof(char),1,dest_file);
     needChange[0] = END_UNIX;
-    fwrite(needChange,sizeof(char), 1,helper);
+    fwrite(needChange,sizeof(char), 1,dest_file);
   }
 }
 
-int checkEndLine(char* buff,char check,const char* flag2,FILE* helper ){
+void applyChangeSwap(char* needChange, const char* flag ,FILE* dest_file)
+{
+  //help buffer
+  char help[2];
+  //to format of unix
+  if(strcmp(flag,"-unix")== 0)
+  {
+    needChange[0] = END_UNIX;
+    SwapCharsBytes(needChange);
+    fwrite(needChange,sizeof(char), 1,dest_file);
+
+  }//to format of mac
+  else if(strcmp(flag,"-mac")== 0)
+  {
+    needChange[0] = END_MAC;
+    SwapCharsBytes(needChange);
+    fwrite(needChange,sizeof(char), 1,dest_file);
+  }//to format of windows
+  else if(strcmp(flag,"-win")== 0)
+  {
+    //end line in windows consists of two characters(of two bytes each)
+    needChange[0] = END_MAC;
+    SwapCharsBytes(needChange);
+    fwrite(needChange,sizeof(char), 1,dest_file);
+    help[0]=NULL_TEMINATOR;
+    //in c array containing the characters terminated with a null character
+    SwapCharsBytes(needChange);
+    fwrite(help, sizeof(char),1,dest_file);
+    needChange[0] = END_UNIX;
+    SwapCharsBytes(needChange);
+    fwrite(needChange,sizeof(char), 1,dest_file);
+  }
+}
+
+int checkEndLine(char* buff,char check,const char* flag2,FILE* dest_file ){
   //check if the current buffer consists new line charcter in binary
   if(buff[0] ==check){
-    applyChange(buff,flag2,helper);//call applyChange function to thake care of the case//
+    applyChange(buff,flag2,dest_file);//call applyChange function to thake care of the case//
+    return 1;
+  }
+  return 0;
+}
+
+int checkEndLineAndSwap(char* buff,char check,const char* flag2,FILE* dest_file ){
+  //check if the current buffer consists new line charcter in binary
+  if(buff[0] ==check){
+    applyChangeSwap(buff,flag2,dest_file);//call applyChange function to thake care of the case//
     return 1;
   }
   return 0;
@@ -109,25 +147,25 @@ void convertAndKeep(const char *fileName, const char *destFile, const char *flag
   char buff[2];//buffer to save what we read from the file
   char buffCheck[2];//help buffer
   //pointer to the input & output files
-  FILE *in, *helper;
+  FILE *in, *dest_file;
   in = fopen(fileName,"rb");//open both files in binary mode
-//  helper = fopen("help", "wb");
-  helper = fopen(destFile, "wb");
+//  dest_file = fopen("help", "wb");
+  dest_file = fopen(destFile, "wb");
   //as long as we didnt finish reading file we keep reading one element in size of short int (2 bytes) each time
   while ((fread(buff , sizeof(char), 1,in) )> 0){
     //copy from unix to...
     if(strcmp(flag1,"-unix")==0){
       //call checkEndLine function which takes care of the case we need convert to windows format
-      if(checkEndLine(buff,END_UNIX,flag2,helper)==0){
+      if(checkEndLine(buff,END_UNIX,flag2,dest_file)==0){
         //if this is no end line continue copy file
-        fwrite(buff,sizeof(char), 1,helper);
+        fwrite(buff,sizeof(char), 1,dest_file);
       }
     }//copy from mac to...
     else if (strcmp(flag1,"-mac")==0){
       //call checkEndLine function which takes care of the case we need convert to windows format
-      if(checkEndLine(buff,END_MAC,flag2,helper)==0){
+      if(checkEndLine(buff,END_MAC,flag2,dest_file)==0){
         //if this is no end line continue copy file
-        fwrite(buff,sizeof(char), 1,helper);
+        fwrite(buff,sizeof(char), 1,dest_file);
       }
     }//from win to
     else if(strcmp(flag1,"-win")==0){
@@ -138,100 +176,172 @@ void convertAndKeep(const char *fileName, const char *destFile, const char *flag
         //first check if it equals to '/r'
         if(fread(buff , sizeof(char), 1,in) > 0){//now check if there is more bytes to read
           //call checkEndLine function which takes care of the case we need convert to windows format
-          if(checkEndLine(buff,END_UNIX,flag2,helper)==0){
+          if(checkEndLine(buff,END_UNIX,flag2,dest_file)==0){
             buffCheck[0]=END_MAC;
-            fwrite(buffCheck,sizeof(char), 1,helper);
+            fwrite(buffCheck,sizeof(char), 1,dest_file);
             //in c array containing the characters terminated with a null character
             buffCheck[0]=NULL_TEMINATOR;
-            fwrite(buffCheck,sizeof(char), 1,helper);
+            fwrite(buffCheck,sizeof(char), 1,dest_file);
             //buffCheck[1]=buff[0];
-            fwrite(buff,sizeof(char), 1,helper);
+            fwrite(buff,sizeof(char), 1,dest_file);
           }//if this is no end line continue copy file
         }else
-          fwrite(buff,sizeof(char), 1,helper);
+          fwrite(buff,sizeof(char), 1,dest_file);
 
       }else
-        fwrite(buff,sizeof(char), 1,helper);
+        fwrite(buff,sizeof(char), 1,dest_file);
     }
   }
   short int buf[2];//buffer
   //as long as we didnt finish reading file
-  while (fread(buf ,sizeof(short int), 1,in)> 0){
-    swapBytes(buf);//call function swapBytes
-    fwrite(buff,sizeof(short int), 1,helper);//write to the outfile
-  }
+//  while (fread(buf ,sizeof(short int), 1,in)> 0){
+//    swapBytes(buf);//call function swapBytes
+//    fwrite(buff,sizeof(short int), 1,dest_file);//write to the outfile
+//  }
   fclose(in);
-  fclose(helper);//close both file after we done
-//  char buff[2];
-//  FILE *source = fopen(src, "rb");
-//  if (source == NULL) {
-//    return;
-//  }
-//  FILE *target = fopen(trg, "wb");
-//  if (target == NULL) {
-//    return;
-//  }
-//  while (fread(buff, sizeof(buff), 1, source) != 0) {
-//    if (strcmp(f1, MAC) == 0) {
-//      if (strcmp(f2, UNIX) == 0) {
-//        if (strcmp(buff, MAC_SIGN) == 0) {
-//          strcpy(buff, UNIX_SIGN);
-//          fwrite(buff, sizeof(buff), 1, target);
-//        }
-//      } else if (strcmp(f2, WIN) == 0) {
-//        if (strcmp(buff, MAC_SIGN) == 0)
-//          fwrite(buff, sizeof(buff), 1, target);
-//        strcpy(buff, UNIX_SIGN);
-//        fwrite(buff, sizeof(buff), 1, target);
-//      } else {
-//        fwrite(buff, sizeof(buff), 1, target);
-//      }
-//    }
-//    if (strcmp(f1, UNIX) == 0) {
-//      if (strcmp(f2, MAC) == 0) {
-//        if (strcmp(buff, UNIX_SIGN) == 0) {
-//          strcpy(buff, MAC_SIGN);
-//          fwrite(buff, sizeof(buff), 1, target);
-//        }
-//      } else if (strcmp(f2, WIN) == 0) {
-//        if (strcmp(buff, UNIX_SIGN) == 0) {
-//          strcpy(buff, MAC_SIGN);
-//          fwrite(buff, sizeof(buff), 1, target);
-//          strcpy(buff, UNIX_SIGN);
-//          fwrite(buff, sizeof(buff), 1, target);
-//        }
-//      } else {
-//        fwrite(buff, sizeof(buff), 1, target);
-//      }
-//    }
-//    // TODO: finish the if condition
-//    // convert win sign to mac sign.
-//    if (strcmp(f1, WIN) == 0) {
-//      if (strcmp(f2, MAC) == 0) {
-//        if (strcmp(buff, MAC_SIGN) == 0) {
-//          strcpy(buff, MAC_SIGN);
-//          fwrite(buff, sizeof(buff), 1, target);
-//          fwrite(buff,sizeof(buff), 1, target);
-//        }
-//      } else if (strcmp(f2, UNIX) == 0) {
-//        strcpy(buff, UNIX_SIGN);
-//        fwrite(buff, sizeof(buff), 1, target);
-//        fwrite(buff,sizeof(buff), 1, target);
-//      } else {
-//        fwrite(buff, sizeof(buff), 1, target);
-//      }
-//    }
-//    fwrite(buff, sizeof(buff), 1, target);
-//  }
-//  fclose(source);
-//  fclose(target);
+  fclose(dest_file);//close both file after we done
+
 }
+
+void convertAndSwap(const char *fileName, const char *destFile, const char *flag1, const char *flag2) {
+
+  char buff[2];//buffer to save what we read from the file
+  char buffCheck[2];//help buffer
+  //pointer to the input & output files
+  FILE *in, *dest_file;
+  in = fopen(fileName,"rb");//open both files in binary mode
+//  dest_file = fopen("help", "wb");
+  dest_file = fopen(destFile, "wb");
+  //as long as we didnt finish reading file we keep reading one element in size of short int (2 bytes) each time
+  while ((fread(buff , sizeof(buff), 1,in) )> 0){
+    //copy from unix to...
+    if(strcmp(flag1,"-unix")==0){
+      //call checkEndLine function which takes care of the case we need convert to windows format
+      if(checkEndLine(buff,END_UNIX,flag2,dest_file)==0){
+        //if this is no end line continue copy file
+        fwrite(buff,sizeof(buff), 1,dest_file);
+      }
+    }//copy from mac to...
+    else if (strcmp(flag1,"-mac")==0){
+      //call checkEndLine function which takes care of the case we need convert to windows format
+      if(checkEndLineAndSwap(buff,END_MAC,flag2,dest_file)==0){
+        //if this is no end line continue copy file
+        char temp = buff[0];
+        buff[0] = buff[1];
+        buff[1]=temp;
+        fwrite(buff,sizeof(buff), 1,dest_file);
+      }
+    }//from win to
+    else if(strcmp(flag1,"-win")==0){
+      //check if current byte equals to '\r'
+      if(buff[0] == END_MAC){
+        //in c array containing the characters terminated with a null character
+        fread(buff , sizeof(buff), 1,in);//check \0
+        //first check if it equals to '/r'
+        if(fread(buff , sizeof(buff), 1,in) > 0){//now check if there is more bytes to read
+          //call checkEndLine function which takes care of the case we need convert to windows format
+          if(checkEndLine(buff,END_UNIX,flag2,dest_file)==0){
+            buffCheck[0]=END_MAC;
+            fwrite(buffCheck,sizeof(buff), 1,dest_file);
+            //in c array containing the characters terminated with a null character
+            buffCheck[0]=NULL_TEMINATOR;
+            fwrite(buffCheck,sizeof(buff), 1,dest_file);
+            //buffCheck[1]=buff[0];
+            fwrite(buff,sizeof(buff), 1,dest_file);
+          }//if this is no end line continue copy file
+        }else
+          fwrite(buff,sizeof(buff), 1,dest_file);
+
+      }else
+        fwrite(buff,sizeof(buff), 1,dest_file);
+    }
+  }
+  short int buf[2];//buffer
+  //as long as we didnt finish reading file
+//  while (fread(buf ,sizeof(short int), 1,in)> 0){
+//    swapBytes(buf);//call function swapBytes
+//    fwrite(buff,sizeof(short int), 1,dest_file);//write to the outfile
+//  }
+  fclose(in);
+  fclose(dest_file);//close both file after we done
+}
+
+//void convertAndSwap(const char *fileName, const char *destFile, const char *flag1, const char *flag2) {
+//  char buff[2];//buffer to save what we read from the file
+//  char buffCheck[2];//help buffer
+//  //pointer to the input & output files
+//  FILE *in, *dest_file;
+//  in = fopen(fileName,"rb");//open both files in binary mode
+////  dest_file = fopen("help", "wb");
+//  dest_file = fopen(destFile, "wb");
+//  //as long as we didnt finish reading file we keep reading one element in size of short int (2 bytes) each time
+//  while ((fread(buff , sizeof(char), 1,in) )> 0){
+////    SwapCharsBytes(buff);
+//    //copy from unix to...
+//    if(strcmp(flag1,"-unix")==0){
+//      //call checkEndLine function which takes care of the case we need convert to windows format
+//      if(checkEndLineAndSwap(buff,END_UNIX,flag2,dest_file)==0){
+//        //if this is no end line continue copy file
+//        fwrite(buff,sizeof(char), 1,dest_file);
+//      }
+//
+//    }//copy from mac to...
+//    else if (strcmp(flag1,"-mac")==0){
+//      //call checkEndLine function which takes care of the case we need convert to windows format
+//      if(checkEndLineAndSwap(buff,END_MAC,flag2,dest_file)==0){
+//        //if this is no end line continue copy file
+//        SwapCharsBytes(buff);
+//        fwrite(buff,sizeof(char), 1,dest_file);
+//      }
+//    }//from win to
+//    else if(strcmp(flag1,"-win")==0){
+//      //check if current byte equals to '\r'
+//      if(buff[0] == END_MAC){
+//        //in c array containing the characters terminated with a null character
+//        fread(buff , sizeof(char), 1,in);//check \0
+//        //first check if it equals to '/r'
+//        if(fread(buff , sizeof(char), 1,in) > 0){//now check if there is more bytes to read
+//          //call checkEndLine function which takes care of the case we need convert to windows format
+//          if(checkEndLineAndSwap(buff,END_UNIX,flag2,dest_file)==0){
+//            buffCheck[0]=END_MAC;
+//            fwrite(buffCheck,sizeof(char), 1,dest_file);
+//            //in c array containing the characters terminated with a null character
+//            buffCheck[0]=NULL_TEMINATOR;
+//            fwrite(buffCheck,sizeof(char), 1,dest_file);
+//            //buffCheck[1]=buff[0];
+//            fwrite(buff,sizeof(char), 1,dest_file);
+//          }//if this is no end line continue copy file
+//        }else{
+//          char temp = buff[0];
+//        buff[0] = buff[1];
+//        buff[1]=temp;
+//          fwrite(buff,sizeof(char), 1,dest_file);
+//        }
+//      }else
+//      {
+////        SwapCharsBytes(buff);
+//        fwrite(buff,sizeof(char), 1,dest_file);
+//      }
+//    }
+//  }
+////  short int buf[2];//buffer
+////    while (fread(buf ,sizeof(short int), 1,in)> 0){
+////    swapBytes(buf);//call function swapBytes
+////    fwrite(buff,sizeof(short int), 1,dest_file);//write to the outfile
+////  }
+//  fclose(in);
+//  fclose(dest_file);//close both file after we done
+//}
 
 void convert(const char *src, const char *trg, const char *f1, const char *f2,
              const char *change) {
 
   if(strcmp(change, KEEP) == 0){
     convertAndKeep(src, trg,f1,f2);
+  }
+  else if(strcmp(change, SWAP) == 0){
+//    convertAndSwap(src, trg,f1,f2);
+    convertAndSwap(src, trg,f1,f2);
   }
 //  char buff[2];
 //  FILE *source = fopen(src, "rb");
