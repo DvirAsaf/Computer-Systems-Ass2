@@ -100,28 +100,28 @@ void applyChangeSwap(char* needChange, const char* flag ,FILE* dest_file)
   {
     needChange[0] = END_UNIX;
     SwapCharsBytes(needChange);
-    fwrite(needChange,sizeof(char), 1,dest_file);
+    fwrite(needChange,sizeof(help), 1,dest_file);
 
   }//to format of mac
   else if(strcmp(flag,"-mac")== 0)
   {
     needChange[0] = END_MAC;
     SwapCharsBytes(needChange);
-    fwrite(needChange,sizeof(char), 1,dest_file);
+    fwrite(needChange,sizeof(help), 1,dest_file);
   }//to format of windows
   else if(strcmp(flag,"-win")== 0)
   {
     //end line in windows consists of two characters(of two bytes each)
     needChange[0] = END_MAC;
     SwapCharsBytes(needChange);
-    fwrite(needChange,sizeof(char), 1,dest_file);
+    fwrite(needChange,sizeof(help), 1,dest_file);
     help[0]=NULL_TEMINATOR;
     //in c array containing the characters terminated with a null character
     SwapCharsBytes(needChange);
-    fwrite(help, sizeof(char),1,dest_file);
+    fwrite(help, sizeof(help),1,dest_file);
     needChange[0] = END_UNIX;
     SwapCharsBytes(needChange);
-    fwrite(needChange,sizeof(char), 1,dest_file);
+    fwrite(needChange,sizeof(help), 1,dest_file);
   }
 }
 
@@ -217,8 +217,9 @@ void convertAndSwap(const char *fileName, const char *destFile, const char *flag
     //copy from unix to...
     if(strcmp(flag1,"-unix")==0){
       //call checkEndLine function which takes care of the case we need convert to windows format
-      if(checkEndLine(buff,END_UNIX,flag2,dest_file)==0){
+      if(checkEndLineAndSwap(buff,END_UNIX,flag2,dest_file)==0){
         //if this is no end line continue copy file
+        SwapCharsBytes(buff);
         fwrite(buff,sizeof(buff), 1,dest_file);
       }
     }//copy from mac to...
@@ -226,9 +227,10 @@ void convertAndSwap(const char *fileName, const char *destFile, const char *flag
       //call checkEndLine function which takes care of the case we need convert to windows format
       if(checkEndLineAndSwap(buff,END_MAC,flag2,dest_file)==0){
         //if this is no end line continue copy file
-        char temp = buff[0];
-        buff[0] = buff[1];
-        buff[1]=temp;
+//        char temp = buff[0];
+//        buff[0] = buff[1];
+//        buff[1]=temp;
+        SwapCharsBytes(buff);
         fwrite(buff,sizeof(buff), 1,dest_file);
       }
     }//from win to
@@ -240,20 +242,27 @@ void convertAndSwap(const char *fileName, const char *destFile, const char *flag
         //first check if it equals to '/r'
         if(fread(buff , sizeof(buff), 1,in) > 0){//now check if there is more bytes to read
           //call checkEndLine function which takes care of the case we need convert to windows format
-          if(checkEndLine(buff,END_UNIX,flag2,dest_file)==0){
+          if(checkEndLineAndSwap(buff,END_UNIX,flag2,dest_file)==0){
             buffCheck[0]=END_MAC;
-            fwrite(buffCheck,sizeof(buff), 1,dest_file);
+//            SwapCharsBytes(buffCheck);
+//            fwrite(buffCheck,sizeof(buff), 1,dest_file);
             //in c array containing the characters terminated with a null character
-            buffCheck[0]=NULL_TEMINATOR;
+            buffCheck[1]=NULL_TEMINATOR;
+            SwapCharsBytes(buffCheck);
             fwrite(buffCheck,sizeof(buff), 1,dest_file);
             //buffCheck[1]=buff[0];
+            SwapCharsBytes(buff);
             fwrite(buff,sizeof(buff), 1,dest_file);
           }//if this is no end line continue copy file
-        }else
-          fwrite(buff,sizeof(buff), 1,dest_file);
+        }else {
+          SwapCharsBytes(buff);
+          fwrite(buff, sizeof(buff), 1, dest_file);
+        }
 
-      }else
-        fwrite(buff,sizeof(buff), 1,dest_file);
+      }else {
+        SwapCharsBytes(buff);
+        fwrite(buff, sizeof(buff), 1, dest_file);
+      }
     }
   }
   short int buf[2];//buffer
